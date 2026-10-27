@@ -1,0 +1,120 @@
+# Copy to config/config.yaml (git-ignored) and edit the paths. Relative paths are resolved
+# against this file's folder. Values below are the ones used in the thesis analysis.
+
+paths:
+  raw_root: /path/to/raw_data                # one folder per subject, see docs/data_layout.md
+  derivatives: /path/to/derivatives          # everything this pipeline writes
+  sessions_csv: sessions.csv                 # columns: subject, session[, include]
+  # templates; {raw_root}, {sub}, {ses} are filled in
+  snirf: "{raw_root}/{sub}/session_{ses}/nirs/{sub}_s{ses}.snirf"
+  xdf: "{raw_root}/{sub}/session_{ses}/lsl/{sub}_s{ses}.xdf"
+  ratings_csv: "{raw_root}/{sub}/session_{ses}/ratings/{sub}_s{ses}.csv"
+  # optional hand-checked events table (onset, duration, value, trial_type on the fNIRS clock);
+  # if it exists it is used instead of XDF synchronisation (e.g. interrupted sessions)
+  events_override: "{raw_root}/{sub}/session_{ses}/events_override.csv"
+  videos: /path/to/videos                    # session_<s>/block_<b>/video_<n>.mp4
+  video_models: /path/to/models              # face_detection_yunet_2023mar.onnx, yolov8n.pt
+
+lsl:
+  marker_stream: PsychoPyMarker              # event markers
+  sync_stream: HwSyncMarker                  # LSL copy of the hardware sync pulses
+  nirs_sync_aux: digital                     # aux channel of the fNIRS device with the same pulses
+  dedouble_s: 2.0                            # device logs each pulse twice within this interval
+
+paradigm:
+  n_video_blocks: 3
+  videos_per_block: 8
+  n_rest_blocks: 3
+  rest_trial_s: 60                           # rest "trial" analysed from the rest onset
+
+ratings:
+  rating_column: circular_slider.response
+  position_column: video_block.thisTrialN    # 0-based position within a video block
+  block_columns: [main.thisN, main.thisRepN] # outer loop over video blocks (0-based)
+  videos_per_block: 8
+  n_video_blocks: 3
+
+forward_model:
+  head_model: icbm152                        # cedalion atlas head model (Schaefer-600 / Yeo-17 parcels)
+  fluence_method: nirfaster                  # or mcx
+
+preprocessing:
+  fmin: 0.01                                 # Hz, high-pass
+  fmax: 0.4                                  # Hz, low-pass
+  butter_order: 4
+  dpf: 6.0
+  mean_amp_range_v: [0.001, 0.84]            # channel pruning: mean amplitude range (V)
+  snr_thresh: 3.0                            # channel pruning: SNR
+  quality_trim_s: 120                        # pruning window = rest block 1 minus this at each end
+  bad_rel_var: 1.0e+6                        # variance inflation of pruned channels in the noise model
+  buffer_s: {video: 60, rest: 30}            # padding around blocks
+
+recon:
+  mode: mua2conc
+  alpha_spatial: 0.001
+  alpha_meas_K: 0.01                         # alpha_meas estimated per session from the noise model
+  apply_c_meas: true
+  dod_thresh: 0.001                          # parcel kept if sensitive above this
+  global_exclude: [Limbic]                   # zero weight in the parcel-space global estimate
+
+glm:
+  t_pre: 2                                   # Gaussian kernels with tails, s
+  t_post: 55
+  t_delta: 6
+  t_std: 3
+  drift_order: 1
+  noise_model: ols
+  pad_video_s: 13                            # trial window: onset - pad .. offset + pad
+  pad_rest_s: 15
+  video_dur_range_s: [45, 75]                # clips outside this are treated as aborted
+
+features:
+  baseline: [-8.0, -1.0]                     # s from onset; null = no baseline
+  trial_length_s: 60
+  windows: {full: [0, 60], early: [0, 15], sustained: [15, 55]}
+  lowband: [0.01, 0.10]
+  min_video_trials: 8                        # sessions with fewer are left out of the tables
+
+stats:
+  n_perm: 5000
+  fdr_q: 0.05
+  min_subjects: 8
+  min_trials_per_session: 8
+  min_parcels_per_network: 3
+  tertile: 0.3333333
+  parcel_set: subject_common                 # parcels sensitive in every session of a subject
+  families: [glm_auc, mean, slope, std, stdderiv, lowfreq, hbohbr, fc]
+  exploratory: [mean_early, mean_sustained, slope_early, slope_sustained]
+  negative_control: [ttp]
+  lme: true
+  seed: 0
+
+decoding:
+  n_perm: 1000                               # within-subject grid null
+  n_perm_cross: 500                          # cross-subject corrected test
+  seed: 0
+  # name: list of blocks "<level>:<family>:<chromo>" (level net = network x hemisphere, par = parcel)
+  feature_sets:
+    A_glm_net: [net:glm_auc:HbO, net:glm_auc:HbR]
+    B_mean: [net:mean:HbO, net:mean:HbR]
+    B_slope: [net:slope:HbO, net:slope:HbR]
+    B_std: [net:std:HbO, net:std:HbR]
+    B_stdderiv: [net:stdderiv:HbO, net:stdderiv:HbR]
+    B_lowfreq: [net:lowfreq:HbO, net:lowfreq:HbR]
+    B_hbohbr: [net:hbohbr:HbO]
+    B_fc: [net:fc:HbO, net:fc:HbR]
+    B_amplitude: [net:mean:HbO, net:mean:HbR, net:mean_early:HbO, net:mean_early:HbR,
+                  net:mean_sustained:HbO, net:mean_sustained:HbR]
+    B_mean_HbO: [net:mean:HbO]
+    C_mean_fc: [net:mean:HbO, net:mean:HbR, net:fc:HbO, net:fc:HbR]
+    C_everything: ["net:*"]                  # every network-level block
+    A_glm_parcel: [par:glm_auc:HbO, par:glm_auc:HbR]
+    C_parcel_mean: [par:mean:HbO, par:mean:HbR]
+  wide_pca: 10                               # sets wider than 40 features are also run with
+  wide_select: 20                            # 10 PCs and with the 20 best features
+  cross_subject_sets: [B_mean_HbO, B_amplitude, C_mean_fc]
+  # stage A (video vs rest) and stages E/F (model comparison); grids in decoding.sklearn_models
+  control_models: [logreg, svm, rf]
+  models:
+    reg: [ridge, enet, pls, svr, rf]         # target: rating_z_session
+    clf: [logreg, ridgeclf, svm, rf]         # target: high vs low tertile

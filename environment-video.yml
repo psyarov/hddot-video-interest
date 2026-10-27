@@ -1,0 +1,25 @@
+# Stimulus-feature extraction (scripts/video/). Separate because of torch.
+#   mamba env create -f environment-video.yml && mamba activate dotinterest-video
+#   pip install -e .
+# Model weights (put both in paths.video_models):
+#   face_detection_yunet_2023mar.onnx  https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet
+#   yolov8n.pt                         https://github.com/ultralytics/assets/releases
+name: dotinterest-video
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - ffmpeg
+  - numpy
+  - scipy
+  - pandas
+  - xarray
+  - h5netcdf
+  - pyyaml
+  - matplotlib
+  - opencv
+  - pip
+  - pip:
+      - torch==2.2.2
+      - ultralytics
+      - silero-vad

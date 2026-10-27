@@ -1,0 +1,25 @@
+# Main analysis environment (steps 0-7).
+#   mamba env create -f environment.yml && mamba activate dotinterest
+#   pip install -e .
+# cedalion: https://github.com/ibs-lab/cedalion. The thesis ran a development build from
+# summer 2026 (26.4.0rc2.dev); for the forward model (step 1) also install NIRFASTer as
+# described in the cedalion documentation.
+name: dotinterest
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - pandas
+  - xarray
+  - h5netcdf
+  - pyyaml
+  - scikit-learn
+  - statsmodels
+  - matplotlib
+  - pip
+  - pip:
+      - pyxdf
+      - pytest
+      - git+https://github.com/ibs-lab/cedalion.git

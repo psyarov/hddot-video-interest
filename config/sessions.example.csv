@@ -1,0 +1,6 @@
+subject,session,include
+# one row per recording session; set include to 0 to leave a session out
+001,1,1
+001,2,1
+002,1,1
+002,2,0

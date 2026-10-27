@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dotinterest"
+version = "1.0.0"
+description = "Whole-head HD-DOT during naturalistic video viewing: preprocessing, image reconstruction, single-trial features, group statistics and decoding of interest"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+# cedalion is installed separately (see environment.yml); everything else:
+dependencies = [
+    "numpy", "scipy", "pandas", "xarray", "h5netcdf", "pyyaml",
+    "scikit-learn", "statsmodels", "matplotlib", "pyxdf",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: end-to-end run on a synthetic study"]

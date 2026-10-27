@@ -1,0 +1,25 @@
+# never commit data or outputs
+config/config.yaml
+config/sessions.csv
+derivatives/
+data/
+logs/
+*.snirf
+*.xdf
+*.nc
+*.pkl
+*.h5
+*.hdf5
+*.npz
+*.mp4
+*.onnx
+*.pt
+*.csv.gz
+
+# python / OS
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+*.log
